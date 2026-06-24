@@ -1,0 +1,152 @@
+'''
+Machine learning and Agent-to-agent (A2A) protocols
+
+***R Programming***
+
+Dataset: Iris Dataset (https://archive.ics.uci.edu/ml/datasets/Iris?utm_source=chatgpt.com)
+
+Concepts:  Below is a single-block R implementation of a true network-style A2A system using REST APIs with plumber, httr2, and jsonlite.
+
+Project: This project simulates a real Agent-to-Agent architecture where each agent runs as a separate microservice.
+
+This project Demonstrates (Real A2A) ** a true distributed A2A system because:
+- Each agent is independent
+- Communication happens over HTTP
+- JSON messages are exchanged
+- Each agent only knows its task
+- Orchestrator coordinates workflow
+- Agents can be scaled or replaced independently
+
+jsonlite: A Simple and Robust JSON Parser and Generator for R 
+randomForest: Breiman and Cutler's random forests for classification and regression 
+
+Processing R code website:  https://rdrr.io/snippets/
+
+'''
+# ============================================================
+# A2A SIMULATION FOR rdrr.io/snippets
+# No plumber servers
+# No package installation
+# ============================================================
+
+# Load available packages
+library(jsonlite)
+library(randomForest)
+
+# ============================================================
+# DATA AGENT
+# ============================================================
+
+data_agent <- function() {
+
+  data(iris)
+
+  cat("DataAgent: Dataset loaded\n")
+
+  list(
+    sender = "DataAgent",
+    receiver = "MLAgent",
+    task = "train_model",
+    payload = iris
+  )
+}
+
+# ============================================================
+# ML AGENT
+# ============================================================
+
+ml_agent <- function(message) {
+
+  df <- as.data.frame(message$payload)
+
+  set.seed(42)
+
+  train_idx <- sample(
+    1:nrow(df),
+    size = floor(0.8 * nrow(df))
+  )
+
+  train <- df[train_idx, ]
+  test <- df[-train_idx, ]
+
+  model <- randomForest(
+    Species ~ .,
+    data = train
+  )
+
+  preds <- predict(model, test)
+
+  accuracy <- mean(preds == test$Species)
+
+  cat(
+    paste(
+      "MLAgent: Accuracy =",
+      round(accuracy, 4),
+      "\n"
+    )
+  )
+
+  list(
+    sender = "MLAgent",
+    receiver = "ReportingAgent",
+    task = "report",
+    payload = list(
+      accuracy = accuracy,
+      rows = nrow(df),
+      features = ncol(df) - 1
+    )
+  )
+}
+
+# ============================================================
+# REPORTING AGENT
+# ============================================================
+
+reporting_agent <- function(message) {
+
+  payload <- message$payload
+
+  cat("\n")
+  cat("====================================\n")
+  cat("A2A MACHINE LEARNING REPORT\n")
+  cat("====================================\n")
+  cat("Rows: ", payload$rows, "\n")
+  cat("Features: ", payload$features, "\n")
+  cat("Accuracy: ", round(payload$accuracy, 4), "\n")
+  cat("====================================\n")
+}
+
+# ============================================================
+# ORCHESTRATOR
+# ============================================================
+
+cat("Starting A2A Workflow\n\n")
+
+msg1 <- data_agent()
+
+msg2 <- ml_agent(msg1)
+
+reporting_agent(msg2)
+
+cat("\nWorkflow Completed Successfully\n")
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+randomForest 4.6-14
+Type rfNews() to see new features/changes/bug fixes.
+Starting A2A Workflow
+
+DataAgent: Dataset loaded
+MLAgent: Accuracy = 0.9333 
+
+====================================
+A2A MACHINE LEARNING REPORT
+====================================
+Rows:  150 
+Features:  4 
+Accuracy:  0.9333 
+====================================
+
+Workflow Completed Successfully
